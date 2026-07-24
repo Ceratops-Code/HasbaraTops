@@ -19,7 +19,6 @@ from .errors import HasbaraTopsError, StorageError, WriteSafetyError
 from .facebook_url import parse_facebook_url
 from .identifiers import next_case_id, next_turn_id
 from .lifecycle import CLOSED_STATUSES, validate_posted_turn, validate_transition
-from .migration_receipt import migration_receipt_from_mapping, render_migration_receipt
 from .models import CaseRecord, LifecycleTransition, TurnRecord, to_jsonable
 from .parent_graph import validate_parent_graph
 from .readback import verify_readback
@@ -232,14 +231,6 @@ def _build_parser() -> argparse.ArgumentParser:
     backup = sub.add_parser("db-backup", help="create a consistent non-overwriting backup")
     backup.add_argument("--destination", required=True)
     _add_database_write_arguments(backup)
-    identity_migration = sub.add_parser(
-        "db-migrate-identity", help="migrate Case and Turn identity transactionally"
-    )
-    identity_migration.add_argument("--backup-destination", required=True)
-    _add_database_write_arguments(identity_migration)
-    import_parser = sub.add_parser("db-import", help="atomically import cases and turns JSON")
-    import_parser.add_argument("json_file")
-    _add_database_write_arguments(import_parser)
 
     parse = sub.add_parser("parse-url", help="parse a Facebook URL without rewriting it")
     parse.add_argument("url")
@@ -260,8 +251,6 @@ def _build_parser() -> argparse.ArgumentParser:
     readback = sub.add_parser("verify-readback", help="compare expected and actual fields")
     readback.add_argument("--expected", required=True)
     readback.add_argument("--actual", required=True)
-    receipt = sub.add_parser("migration-receipt", help="validate and render a migration receipt")
-    receipt.add_argument("json_file")
 
     find = sub.add_parser(
         "case-find", help="resolve by definitive Case ID or discover root candidates"
@@ -349,21 +338,6 @@ def _run_database_command(args: argparse.Namespace, command: str) -> object:
     if command == "db-backup":
         destination = _outside_repository(Path(str(args.destination)))
         return store.backup(destination, approved=bool(args.approved))
-    if command == "db-migrate-identity":
-        destination = _outside_repository(Path(str(args.backup_destination)))
-        return store.migrate_identity(destination, approved=bool(args.approved))
-    if command == "db-import":
-        payload = _mapping(_load_json(str(args.json_file)), "database import")
-        _reject_unknown(payload, {"cases", "turns"}, "database import")
-        cases = [
-            _case_record(_mapping(item, "Case import row"))
-            for item in _list(payload.get("cases"))
-        ]
-        turns = [
-            _turn_record(_mapping(item, "Turn import row"))
-            for item in _list(payload.get("turns"))
-        ]
-        return store.import_records(cases, turns, approved=bool(args.approved))
     if command == "case-find":
         case_id = _optional_string(args.case_id)
         post_id = _optional_string(args.post_id)
@@ -508,8 +482,6 @@ def _run(args: argparse.Namespace) -> object:
         "db-init",
         "db-status",
         "db-backup",
-        "db-migrate-identity",
-        "db-import",
         "case-find",
         "case-show",
         "case-split-branch",
@@ -561,9 +533,6 @@ def _run(args: argparse.Namespace) -> object:
                 "read-back verification failed: " + "; ".join(verification.mismatches)
             )
         return verification
-    if command == "migration-receipt":
-        receipt = migration_receipt_from_mapping(_mapping(_load_json(str(args.json_file))))
-        return json.loads(render_migration_receipt(receipt))
     raise HasbaraTopsError(f"unknown command: {command}")
 
 

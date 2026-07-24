@@ -100,28 +100,6 @@ class ThreadMapEntry:
     state: TurnState
 
 
-@dataclass(frozen=True)
-class MigrationReceipt:
-    operation: str
-    cutover_timestamp: str
-    timezone: str
-    database_schema_version_before: int
-    database_schema_version_after: int
-    database_integrity: str
-    database_backup: str
-    migrated_case_count: int
-    verified_turn_count: int
-    first_case_id: str
-    last_case_id: str
-    case_id_map: Mapping[str, str]
-    backup_verified: bool
-    committed_read_back: str
-    repository_commit: str
-    test_results: str
-    known_limitations: tuple[str, ...]
-    rollback_instructions: tuple[str, ...]
-
-
 def to_jsonable(value: Any) -> Any:
     """Recursively convert dataclasses and enums to JSON-compatible values."""
     if hasattr(value, "__dataclass_fields__"):

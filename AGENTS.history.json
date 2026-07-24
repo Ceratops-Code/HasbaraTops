@@ -39,6 +39,14 @@
       "decision": "Use repo-root skills as the sole HasbaraTops skill source and route compatible skill maintenance, installation, and staging through the lifecycle and repository installer.",
       "reason": "Replace the obsolete source layout and nonexistent installer command with the current Ceratops-compatible ownership model.",
       "regression": "Retain task-worktree isolation, prevent duplicate skill sources, and do not imply that runtime installation occurs without explicit scope."
+    },
+    {
+      "rules": [
+        "HASBARA-DESIGN-01"
+      ],
+      "decision": "Keep affected canonical design documents aligned with every implementation, interface, workflow, and governing-behavior change.",
+      "reason": "Prevent implementation changes from leaving the documented current design missing or stale.",
+      "regression": "Do not require meaningless design churn for formatting-only or editorial-only changes that do not alter behavior."
     }
   ]
 }

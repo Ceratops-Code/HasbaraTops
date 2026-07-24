@@ -32,6 +32,9 @@
   requests that interaction; never post autonomously.
 - [HASBARA-SENSITIVE-STATE-01] Never commit SQLite state, data exports or
   backups, or credentials and secrets.
+- [HASBARA-DESIGN-01] Update every affected canonical design document in the
+  same change as any implementation, interface, workflow, or governing-behavior
+  change; block completion when design and current behavior differ.
 - [HASBARA-SKILLS-SOURCE-01] Treat repo-root `skills/` as the authoritative
   source for HasbaraTops skills.
 - [HASBARA-SKILLS-LIFECYCLE-01] Use the installed Ceratops skill lifecycle for

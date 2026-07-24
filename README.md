@@ -10,8 +10,9 @@ The runtime reads repository Markdown and the configured SQLite database only.
 AGENTS.md                         canonical governance
 docs/reply-strategy-guide.md     canonical cross-case strategy
 docs/evidence-base.md            canonical reusable evidence
+docs/current-system-design.md    canonical implemented-system design
 external SQLite database         canonical Cases and Turns
-HasbaraTops CLI                 only canonical storage boundary
+HasbaraTops CLI                  only canonical storage boundary
 skills/                          model-driven analysis and reply workflows
 ```
 
@@ -19,7 +20,7 @@ skills/                          model-driven analysis and reply workflows
 
 ## Deterministic boundary
 
-Python and SQLite own URL parsing, identifiers, duplicate identity, schema constraints, lifecycle transitions, parent graphs, transactional writes, committed read-back, open-case summaries, strategy datasets, backups, and migration receipts.
+Python and SQLite own URL parsing, identifiers, duplicate identity, schema constraints, lifecycle transitions, parent graphs, transactional writes, committed read-back, open-case summaries, strategy datasets, and backups.
 
 The model owns interpretation, materially ambiguous parentage, reply drafting, fact-check judgment, and strategy analysis. Each canonical workflow ends in at most one high-level write command.
 
@@ -34,7 +35,7 @@ uv run HasbaraTops check
 
 `HASBARATOPS_DB` must resolve outside the Git repository. `--database <path>` may override it and must appear before the subcommand.
 
-Database initialization, imports, backups, and Case or Turn mutations require `--approved`. Read commands do not mutate state.
+Database initialization, backups, and Case or Turn mutations require `--approved`. Read commands do not mutate state.
 
 ## High-level commands
 
@@ -43,8 +44,6 @@ HasbaraTops check
 HasbaraTops db-init --approved
 HasbaraTops db-status
 HasbaraTops db-backup --destination <outside-repo-path> --approved
-HasbaraTops db-import <snapshot.json> --approved
-HasbaraTops db-migrate-identity --backup-destination <outside-repo-path> --approved
 
 HasbaraTops case-find --case-id <Case-NNN>
 HasbaraTops case-find --post-id <id> --root-comment-id <id>
@@ -59,9 +58,7 @@ HasbaraTops case-record-posting --case-id <id> <payload.json> --approved
 HasbaraTops case-close --case-id <id> <payload.json> --approved
 ```
 
-The high-level write commands allocate identifiers, validate all affected records, write inside an immediate SQLite transaction, commit, reopen, and compare the committed records. Errors produce compact JSON on stderr and a nonzero exit code.
-
-See [CLI payload contracts](docs/cli-payloads.md) for exact JSON shapes.
+The high-level write commands allocate identifiers, validate all affected records, write inside an immediate SQLite transaction, commit, reopen, and compare the committed records. Errors produce compact JSON on stderr and a nonzero exit code. See the [current system design](docs/current-system-design.md) for command and payload contracts.
 
 ## Identity model
 
@@ -97,26 +94,12 @@ Install the managed Codex skills after repository setup:
 python scripts/install-skills.py --repo-root .
 ```
 
-## Import and identity migration
-
-1. Prepare a UTF-8 JSON snapshot with `cases` and `turns` arrays using the exact payload contract.
-2. Initialize an empty outside-Git database.
-3. Create a verified empty backup.
-4. Run `db-import` once after explicit approval.
-5. Run `check`, compare counts and representative records, create a populated backup, and record `docs/migration-receipt.json.example` with actual values.
-
-Import is atomic and only accepts an empty database. Duplicate Case IDs, duplicate Turn identities, invalid enums, invalid URLs, missing parents, cycles, and foreign-key violations stop the transaction. Repeated `Post ID + Root Comment ID` values are allowed.
-
-For an existing schema-version-1 database, `db-migrate-identity` first creates and verifies the approved outside-Git backup, then deterministically renumbers Cases by `(created_at, full existing case_id)` and rewrites every Case/Turn reference in one transaction. The full old ID is only a stable tie-breaker; its date and suffix are never parsed as identity. The command preserves schema version 1, commits, reopens the database, verifies the complete mapping and integrity, and emits a migration receipt. Any failure rolls back and blocks further writes until rollback and integrity are verified.
-
 ## Safety
 
 - Never commit SQLite databases, journals, exports, backups, credentials, secrets, or public Facebook text.
 - Never access Facebook unless explicitly requested; never post autonomously.
-- Never overwrite a backup. Rollback restores a verified backup to a new path.
+- Never overwrite a backup.
 - Keep one canonical writer.
-
-See [controlled rollout](docs/rollout.md) and [rollback](docs/rollback.md).
 
 ## Development
 

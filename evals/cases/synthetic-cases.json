@@ -21,10 +21,6 @@
   {"id": "substantive-closeout", "kind": "closeout", "expected": "observable outcome recorded"},
   {"id": "no-response-closeout", "kind": "closeout", "expected": "no persuasion inferred"},
   {"id": "sqlite-write-rollback", "kind": "recovery", "expected": "transaction rolls back and integrity remains valid"},
-  {"id": "identity-migration-stable-order", "kind": "migration", "expected": "existing Cases deterministically renumbered Case-001 onward in stable creation order"},
-  {"id": "identity-migration-schema-version", "kind": "migration", "expected": "schema version remains 1"},
-  {"id": "identity-migration-backup", "kind": "migration", "expected": "approved verified backup precedes the transactional write"},
-  {"id": "identity-migration-readback", "kind": "migration", "expected": "committed Case and Turn references match the receipt"},
   {"id": "schema-version-mismatch", "kind": "schema", "expected": "canonical writes blocked"},
   {"id": "missing-local-document", "kind": "readiness", "expected": "check fails safely"},
   {"id": "unapproved-sqlite-write", "kind": "write-safety", "expected": "write rejected before database mutation"}
