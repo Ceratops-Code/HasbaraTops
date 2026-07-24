@@ -45,27 +45,6 @@ _KIND_SQL = _sql_enum(item.value for item in TurnKind)
 _STATE_SQL = _sql_enum(item.value for item in TurnState)
 _SCHEMA_SIGNATURE = schema_signature().value
 
-_LEGACY_IDENTITY_SCHEMA_SIGNATURE = schema_signature(
-    {
-        "schema_version": SCHEMA_VERSION,
-        "tables": {"cases": list(CASE_FIELDS), "turns": list(TURN_FIELDS)},
-        "enums": {
-            "cases.status": [item.value for item in CaseStatus],
-            "cases.outcome_class": [item.value for item in OutcomeClass],
-            "turns.parent_confidence": [item.value for item in ParentConfidence],
-            "turns.direction": [item.value for item in TurnDirection],
-            "turns.kind": [item.value for item in TurnKind],
-            "turns.state": [item.value for item in TurnState],
-        },
-        "constraints": [
-            "cases.case_id primary key",
-            "cases(post_id, root_comment_id) unique",
-            "turns(case_id, turn_id) primary key",
-            "turns.case_id references cases.case_id",
-        ],
-    }
-).value
-
 _CASES_SQL = f"""
 CREATE TABLE {{if_not_exists}}{{table}} (
     case_id TEXT PRIMARY KEY CHECK (
@@ -219,27 +198,6 @@ def _verify_database_shape(
         "case_count": int(connection.execute("SELECT COUNT(*) FROM cases").fetchone()[0]),
         "turn_count": int(connection.execute("SELECT COUNT(*) FROM turns").fetchone()[0]),
     }
-
-
-def _verify_legacy_identity_shape(connection: sqlite3.Connection) -> dict[str, object]:
-    state = _verify_database_shape(
-        connection, expected_signature=_LEGACY_IDENTITY_SCHEMA_SIGNATURE
-    )
-    root_unique = False
-    for row in connection.execute("PRAGMA index_list(cases)"):
-        if int(row["unique"]) != 1:
-            continue
-        columns = tuple(
-            str(item["name"])
-            for item in connection.execute(
-                f"PRAGMA index_info('{str(row['name'])}')"
-            )
-        )
-        if columns == ("post_id", "root_comment_id"):
-            root_unique = True
-    if not root_unique:
-        raise StorageError("legacy database lacks its root identity UNIQUE constraint")
-    return state
 
 
 def _case_values(record: CaseRecord) -> dict[str, object]:
@@ -509,13 +467,13 @@ class SQLiteStore:
             cases_sql = _normalized_sql(str(cases_sql_row["sql"]))
             if "case_id = printf('case-%03d'" not in cases_sql:
                 raise StorageError("cases table lacks the canonical Case ID constraint")
-            legacy_unique = [
+            unexpected_unique_constraints = [
                 row
                 for row in connection.execute("PRAGMA index_list(cases)")
                 if str(row["origin"]) == "u"
             ]
-            if legacy_unique:
-                raise StorageError("cases table retains a legacy UNIQUE constraint")
+            if unexpected_unique_constraints:
+                raise StorageError("cases table has an unexpected UNIQUE constraint")
             foreign_keys = sorted(
                 (
                     str(row["table"]),
@@ -554,195 +512,6 @@ class SQLiteStore:
             target.unlink(missing_ok=True)
             raise
         return {"ok": True, "backup": str(target), "database": status}
-
-    def migrate_identity(
-        self, backup_destination: Path, *, approved: bool
-    ) -> Mapping[str, object]:
-        """Replace legacy Case/root identity constraints without changing schema version.
-
-        Cases are renumbered by ``(created_at, existing case_id)``. The full
-        existing identifier is only a deterministic tie-breaker; no embedded
-        date or date-local suffix is interpreted.
-        """
-        _require_approval(approved)
-        target = backup_destination.resolve()
-        if target == self.path:
-            raise StorageError("backup destination must differ from the canonical database")
-        with self._connect() as preflight:
-            signature_row = preflight.execute(
-                "SELECT value FROM storage_metadata WHERE key = 'schema_signature'"
-            ).fetchone()
-            signature = str(signature_row["value"]) if signature_row else ""
-            if signature == _SCHEMA_SIGNATURE:
-                self.status()
-                raise StorageError("identity migration is already applied")
-            _verify_legacy_identity_shape(preflight)
-        if target.exists():
-            raise StorageError(f"backup destination already exists: {target}")
-        target.parent.mkdir(parents=True, exist_ok=True)
-
-        source_snapshot: dict[str, list[dict[str, object]]] | None = None
-        backup_verified = False
-        try:
-            with self._connect(writable=True) as connection:
-                _verify_legacy_identity_shape(connection)
-                source_snapshot = _snapshot(connection)
-                with sqlite3.connect(target) as backup:
-                    connection.backup(backup)
-                with sqlite3.connect(target) as backup_read:
-                    backup_read.row_factory = sqlite3.Row
-                    _verify_legacy_identity_shape(backup_read)
-                    if _snapshot(backup_read) != source_snapshot:
-                        raise StorageError("identity migration backup read-back mismatch")
-                    backup_verified = True
-
-                connection.execute("BEGIN IMMEDIATE")
-                if _snapshot(connection) != source_snapshot:
-                    raise StorageError("database changed while identity migration was starting")
-                case_rows = source_snapshot["cases"]
-                turn_rows = source_snapshot["turns"]
-                case_id_map = {
-                    str(row["case_id"]): f"Case-{index:03d}"
-                    for index, row in enumerate(case_rows, start=1)
-                }
-
-                connection.execute(
-                    _CASES_SQL.format(
-                        if_not_exists="", table="cases_identity_new"
-                    )
-                )
-                connection.execute(
-                    _TURNS_SQL.format(
-                        if_not_exists="",
-                        table="turns_identity_new",
-                        cases_table="cases_identity_new",
-                    )
-                )
-                case_insert = ", ".join("?" for _ in CASE_FIELDS)
-                turn_insert = ", ".join("?" for _ in TURN_FIELDS)
-                for row in case_rows:
-                    values = dict(row)
-                    values["case_id"] = case_id_map[str(row["case_id"])]
-                    connection.execute(
-                        f"INSERT INTO cases_identity_new VALUES ({case_insert})",
-                        tuple(values[field] for field in CASE_FIELDS),
-                    )
-                for row in turn_rows:
-                    values = dict(row)
-                    values["case_id"] = case_id_map[str(row["case_id"])]
-                    connection.execute(
-                        f"INSERT INTO turns_identity_new VALUES ({turn_insert})",
-                        tuple(values[field] for field in TURN_FIELDS),
-                    )
-
-                connection.execute("DROP TABLE turns")
-                connection.execute("DROP TABLE cases")
-                connection.execute("ALTER TABLE cases_identity_new RENAME TO cases")
-                connection.execute("ALTER TABLE turns_identity_new RENAME TO turns")
-                connection.execute(
-                    """CREATE INDEX turns_case_observed_idx
-                    ON turns(case_id, observed_at, turn_id)"""
-                )
-                connection.execute(
-                    """CREATE INDEX cases_root_candidates_idx
-                    ON cases(post_id, root_comment_id, created_at, case_id)"""
-                )
-                connection.execute(
-                    """CREATE UNIQUE INDEX turns_reply_comment_id_uq
-                    ON turns(reply_comment_id) WHERE reply_comment_id IS NOT NULL"""
-                )
-                connection.execute(
-                    """CREATE UNIQUE INDEX turns_fallback_identity_uq
-                    ON turns(case_id, COALESCE(parent_turn_id, ''), direction, exact_text)
-                    WHERE reply_comment_id IS NULL"""
-                )
-                connection.execute(
-                    "UPDATE storage_metadata SET value = ? WHERE key = 'schema_signature'",
-                    (_SCHEMA_SIGNATURE,),
-                )
-                connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-
-                expected_cases = []
-                for row in case_rows:
-                    expected = dict(row)
-                    expected["case_id"] = case_id_map[str(row["case_id"])]
-                    expected_cases.append(expected)
-                expected_cases.sort(
-                    key=lambda row: (str(row["created_at"]), str(row["case_id"]))
-                )
-                expected_turns = []
-                for row in turn_rows:
-                    expected = dict(row)
-                    expected["case_id"] = case_id_map[str(row["case_id"])]
-                    expected_turns.append(expected)
-                expected_turns.sort(
-                    key=lambda row: (str(row["case_id"]), str(row["turn_id"]))
-                )
-                expected_snapshot = {"cases": expected_cases, "turns": expected_turns}
-                _verify_database_shape(connection, expected_signature=_SCHEMA_SIGNATURE)
-                if _snapshot(connection) != expected_snapshot:
-                    raise StorageError("identity migration transactional read-back mismatch")
-                connection.commit()
-        except Exception as error:
-            recovery_errors: list[str] = []
-            if target.exists() and backup_verified:
-                try:
-                    with sqlite3.connect(target) as backup_read:
-                        backup_read.row_factory = sqlite3.Row
-                        _verify_legacy_identity_shape(backup_read)
-                        if source_snapshot is not None and _snapshot(
-                            backup_read
-                        ) != source_snapshot:
-                            raise StorageError("identity migration backup verification failed")
-                except Exception as backup_error:
-                    recovery_errors.append(str(backup_error))
-            elif target.exists():
-                try:
-                    target.unlink()
-                except OSError as cleanup_error:
-                    recovery_errors.append(
-                        f"partial backup cleanup failed: {cleanup_error}"
-                    )
-            try:
-                with self._connect() as rolled_back:
-                    _verify_legacy_identity_shape(rolled_back)
-                    if source_snapshot is not None and _snapshot(
-                        rolled_back
-                    ) != source_snapshot:
-                        raise StorageError("identity migration rollback verification failed")
-            except Exception as rollback_error:
-                recovery_errors.append(str(rollback_error))
-            if recovery_errors:
-                raise StorageError(
-                    "identity migration failed and recovery verification failed: "
-                    + "; ".join(recovery_errors)
-                ) from error
-            backup_state = "retained" if backup_verified else "removed"
-            raise StorageError(
-                "identity migration failed; rollback verified; "
-                f"backup {backup_state}: {error}"
-            ) from error
-
-        status = self.status()
-        with self._connect() as committed:
-            if _snapshot(committed) != expected_snapshot:
-                raise StorageError("identity migration committed read-back mismatch")
-        return {
-            "operation": "db-migrate-identity",
-            "cutover_timestamp": now_jerusalem().isoformat(),
-            "timezone": "Asia/Jerusalem",
-            "database_schema_version_before": SCHEMA_VERSION,
-            "database_schema_version_after": status["schema_version"],
-            "database_integrity": status["integrity"],
-            "database_backup": str(target),
-            "migrated_case_count": status["case_count"],
-            "verified_turn_count": status["turn_count"],
-            "first_case_id": next(iter(case_id_map.values()), ""),
-            "last_case_id": next(reversed(case_id_map.values()), ""),
-            "case_id_map": case_id_map,
-            "backup_verified": True,
-            "committed_read_back": "verified",
-        }
 
     def case_ids(self) -> list[str]:
         with self._connect() as connection:
@@ -897,43 +666,6 @@ class SQLiteStore:
             grouped[turn.case_id].append(turn)
         for case_turns in grouped.values():
             validate_parent_graph(case_turns)
-
-    def import_records(
-        self, cases: list[CaseRecord], turns: list[TurnRecord], *, approved: bool
-    ) -> Mapping[str, object]:
-        """Atomically import a validated snapshot into an empty database."""
-        _require_approval(approved)
-        self._validate_bundle(cases, turns)
-        expected_case_ids = [f"Case-{index:03d}" for index in range(1, len(cases) + 1)]
-        if {case.case_id for case in cases} != set(expected_case_ids):
-            raise StorageError("database import requires a contiguous global Case sequence")
-        try:
-            with self._connect(writable=True) as connection:
-                connection.execute("BEGIN IMMEDIATE")
-                existing = int(connection.execute("SELECT COUNT(*) FROM cases").fetchone()[0])
-                existing += int(connection.execute("SELECT COUNT(*) FROM turns").fetchone()[0])
-                if existing:
-                    raise StorageError("database import requires empty cases and turns tables")
-                for case in cases:
-                    self._insert_case(connection, case)
-                for turn in turns:
-                    self._insert_turn(connection, turn)
-                connection.commit()
-        except sqlite3.Error as error:
-            raise StorageError(f"database import failed: {error}") from error
-        status = self.status()
-        if status["case_count"] != len(cases) or status["turn_count"] != len(turns):
-            raise StorageError("database import read-back count mismatch")
-        for case in cases:
-            if self.get_case(case.case_id) != case:
-                raise StorageError(f"database import Case read-back mismatch: {case.case_id}")
-        expected_turns: dict[str, list[TurnRecord]] = defaultdict(list)
-        for turn in turns:
-            expected_turns[turn.case_id].append(turn)
-        for case_id, case_turns in expected_turns.items():
-            if self.get_turns(case_id) != sorted(case_turns, key=lambda item: item.turn_id):
-                raise StorageError(f"database import Turn read-back mismatch: {case_id}")
-        return status
 
     def create_case(
         self,

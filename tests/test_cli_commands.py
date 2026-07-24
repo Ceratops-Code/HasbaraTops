@@ -245,7 +245,7 @@ def test_case_split_branch_cli_returns_verified_mapping(
     assert backup.is_file()
 
 
-def test_pure_validation_commands_and_migration_receipt(
+def test_pure_validation_commands(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     ids_path = _write(tmp_path / "case-ids.json", ["Case-001"])
@@ -318,11 +318,6 @@ def test_pure_validation_commands_and_migration_receipt(
         )
     )["succeeded"] is True
 
-    receipt_path = Path(__file__).parents[1] / "docs" / "migration-receipt.json.example"
-    receipt = _as_dict(_run_ok(capsys, "migration-receipt", str(receipt_path)))
-    assert receipt["database_schema_version_after"] == 1
-
-
 def test_write_command_rejects_missing_approval(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -331,22 +326,3 @@ def test_write_command_rejects_missing_approval(
     error = json.loads(capsys.readouterr().err)
     assert error["category"] == "write_safety_error"
     assert not database.exists()
-
-    initialized = SQLiteStore(database)
-    initialized.initialize(approved=True)
-    backup = tmp_path / "identity-backup.sqlite3"
-    assert (
-        main(
-            [
-                "--database",
-                str(database),
-                "db-migrate-identity",
-                "--backup-destination",
-                str(backup),
-            ]
-        )
-        == 2
-    )
-    migration_error = json.loads(capsys.readouterr().err)
-    assert migration_error["category"] == "write_safety_error"
-    assert not backup.exists()
