@@ -1,5 +1,7 @@
 # HasbaraTops
 
+## Project rules
+
 - [HASBARA-CHECK-01] Run `HasbaraTops check` before a canonical write,
   after a failed write or readiness check, or when database state is uncertain;
   ordinary read-only queries must reuse fresh sufficient evidence.
