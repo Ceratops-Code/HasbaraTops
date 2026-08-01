@@ -23,6 +23,8 @@ def test_validation_order_isolation_cleanup_and_compact_success(
     real_database = tmp_path / "user database.sqlite3"
     real_database.write_text("untouched", encoding="utf-8")
     evidence_file = tmp_path / "evidence files" / "validation.json"
+    evidence_file.parent.mkdir()
+    evidence_file.write_text('{"stale":true}\n', encoding="utf-8")
     monkeypatch.setenv("HASBARATOPS_DB", str(real_database))
     calls: list[RunCall] = []
 

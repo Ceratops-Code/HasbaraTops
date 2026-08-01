@@ -22,7 +22,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --extra dev --frozen
-      - run: >-
+      - name: Run repository validation
+        run: >-
           uv run --no-sync python scripts/validate_repository.py
           --temp-root "${{ runner.temp }}"
           --evidence-file "${{ runner.temp }}/HasbaraTops-validation.json"
+      - name: Emit repository validation diagnostics
+        if: failure()
+        run: |
+          evidence="${{ runner.temp }}/HasbaraTops-validation.json"
+          if [[ -f "$evidence" ]]; then
+            cat "$evidence"
+          fi

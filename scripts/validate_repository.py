@@ -2,7 +2,9 @@
 
 The caller owns environment setup and chooses both the temporary root and the
 failure-evidence file. This runner never uses a configured canonical database:
-every child process receives an explicit disposable database path instead.
+every child process receives an explicit disposable database path instead. The
+exact selected evidence file is reset before each run so success cannot leave
+stale failure diagnostics behind.
 """
 
 from __future__ import annotations
@@ -308,9 +310,31 @@ def _emit_failure(failure: ValidationFailure, evidence_file: Path) -> int:
     return 1
 
 
+def _remove_stale_evidence(evidence_file: Path) -> ValidationFailure | None:
+    """Remove only the exact caller-selected evidence file before a new run."""
+
+    try:
+        evidence_file.unlink(missing_ok=True)
+    except OSError as error:
+        return ValidationFailure(
+            stage="evidence-preflight",
+            diagnostics=_diagnostics(
+                workspace=None,
+                database=None,
+                results=[],
+                setup_error=f"{type(error).__name__}: {error}",
+                cleanup_error=None,
+            ),
+        )
+    return None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     evidence_file = Path(args.evidence_file).expanduser().resolve()
+    evidence_failure = _remove_stale_evidence(evidence_file)
+    if evidence_failure is not None:
+        return _emit_failure(evidence_failure, evidence_file)
     failure = run_validation(Path(args.temp_root))
     if failure is not None:
         return _emit_failure(failure, evidence_file)

@@ -456,12 +456,15 @@ temporary root outside it, creates one uniquely named child workspace, and
 overrides `HASBARATOPS_DB` for every child process. Initialization and readiness
 also receive the same explicit database argument. Tool caches, Python bytecode,
 and the disposable SQLite database stay within that verified workspace. Cleanup
-removes only that child; it never removes the selected root or the caller's
-failure-evidence file.
+removes only that child and never removes the selected root. Before a run, the
+runner removes only the exact caller-selected evidence file, if present, so an
+`OK` result cannot coexist with stale failure diagnostics.
 
-Successful validation emits only `OK`. Failure emits one compact JSON object
-with the failed stage and caller-selected evidence path; that file contains the
-full captured command, exit status, stdout, and stderr for each attempted stage.
+Successful validation emits only `OK` and leaves no evidence file. Failure emits
+one compact JSON object with the failed stage and caller-selected evidence path;
+that file contains the full captured command, exit status, stdout, and stderr
+for each attempted stage. CI emits that file in a failure-only step so the full
+diagnostics remain available in the job log.
 
 The former Drive-era `doctor` command checked Git-checkout presence, the
 governance bootstrap, Drive configuration, and a Drive schema signature. The
