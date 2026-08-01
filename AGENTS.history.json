@@ -47,6 +47,14 @@
       "decision": "Keep affected canonical design documents aligned with every implementation, interface, workflow, and governing-behavior change.",
       "reason": "Prevent implementation changes from leaving the documented current design missing or stale.",
       "regression": "Do not require meaningless design churn for formatting-only or editorial-only changes that do not alter behavior."
+    },
+    {
+      "rules": [
+        "HASBARATOPS-REPLY-01"
+      ],
+      "decision": "Remove the invalid cross-scope relation to global OUT-03 while preserving the project reply-completeness requirement.",
+      "reason": "Project rule relations may target only project-scope IDs; global concise-output policy already applies through instruction precedence.",
+      "regression": "Preserve one complete, self-contained, ready-to-post reply and global concise-output behavior without duplicating global policy locally."
     }
   ]
 }

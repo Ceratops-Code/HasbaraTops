@@ -22,7 +22,6 @@
   requested case or strategy workflow.
 - [HASBARATOPS-REPLY-01] When proposing a public HasbaraTops reply, provide one
   complete, self-contained, ready-to-post response.
-  - limits: OUT-03
 - [HASBARA-GENERAL-RESPONSES-01] Never inspect, edit, move, rename, replace,
   delete, import, or summarize `General responses` without explicit instruction
   for that exact action.
