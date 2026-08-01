@@ -22,12 +22,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --extra dev --frozen
-      - run: uv run pytest
-      - run: uv run ruff check .
-      - run: uv run mypy
-      - run: uv run HasbaraTops db-init --approved
-        env:
-          HASBARATOPS_DB: ${{ runner.temp }}/HasbaraTops-ci.sqlite3
-      - run: uv run HasbaraTops check
-        env:
-          HASBARATOPS_DB: ${{ runner.temp }}/HasbaraTops-ci.sqlite3
+      - run: >-
+          uv run --no-sync python scripts/validate_repository.py
+          --temp-root "${{ runner.temp }}"
+          --evidence-file "${{ runner.temp }}/HasbaraTops-validation.json"
