@@ -104,9 +104,12 @@ python scripts/install-skills.py --repo-root .
 ## Development
 
 ```powershell
-uv run pytest
-uv run ruff check .
-uv run mypy
+uv sync --extra dev --frozen
+uv run --no-sync python scripts/validate_repository.py `
+  --temp-root "$env:TEMP" `
+  --evidence-file "$env:TEMP\HasbaraTops-validation.json"
 ```
 
+The shared validator runs pytest, Ruff, mypy, database initialization, and the
+authoritative readiness check against an isolated temporary SQLite database.
 Tests use temporary SQLite databases and synthetic public text only.
