@@ -1,0 +1,40 @@
+---
+name: Bug report
+description: >-
+  Report a reproducible HasbaraTops defect without exposing private case data
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what should have happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >-
+        Provide exact commands and synthetic or already-public inputs
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: >-
+        Include the OS, Python version, and relevant commit or package version
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: >-
+            I removed private case data, credentials, database contents, and
+            local paths.
+          required: true
