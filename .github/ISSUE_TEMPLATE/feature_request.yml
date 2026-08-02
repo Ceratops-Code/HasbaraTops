@@ -1,0 +1,30 @@
+---
+name: Feature request
+description: Suggest a focused improvement to HasbaraTops
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem should the repository solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What behavior or workflow should change?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Canonical source impact
+      description: >-
+        Identify affected governance, design, strategy, evidence, CLI, or
+        database contracts
+    validations:
+      required: true
