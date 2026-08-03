@@ -21,7 +21,6 @@ import uuid
 from collections.abc import Mapping, Sequence
 from typing import cast
 
-
 INSTALLER_VERSION = 10
 MANIFEST_NAME = ".runtime-manifest.json"
 RUNTIME_MANIFEST_SCHEMA = "ceratops-runtime-skill.v3"
@@ -415,7 +414,7 @@ def install_batch(
                 )
             (staging / skill).rename(target)
             activated.append(skill)
-    except Exception:
+    except Exception as activation_error:
         rollback_errors = rollback_activation(
             staging, install_root, activated
         )
@@ -430,7 +429,7 @@ def install_batch(
                 details.append(cleanup_error)
             raise RuntimeError(
                 "bootstrap rollback or cleanup failed: " + "; ".join(details)
-            )
+            ) from activation_error
         raise
     else:
         remove_stage(staging, install_root)
