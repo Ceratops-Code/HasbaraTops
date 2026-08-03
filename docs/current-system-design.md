@@ -419,6 +419,22 @@ Repository-root `skills/` is the authoritative HasbaraTops skill source:
 - `hasbaratops-closeout`
 - `hasbaratops-strategy-review`
 
+`skills/skill-sections.json` is the runtime manifest. Every skill receives the
+canonical Ceratops-compatible rules from `skills/sections/core.md` and the
+HasbaraTops-specific shared rules from `skills/sections/hasbaratops.md`; source
+`SKILL.md` files remain delta-only. `scripts/install-skills-bootstrap.py` owns
+first installation, while `scripts/install-skills.py` validates and refreshes
+skills through an installed lifecycle bundle. `deploy/deploy.yml` declares the
+bootstrap operation and the managed lifecycle deployment handoff.
+
+Installed skills resolve the CLI command once before use. They prefer the
+`HasbaraTops` console command on `PATH`; otherwise an active source checkout
+uses `uv run --frozen HasbaraTops`, while an installed skill reads
+`source_repository_root` from its runtime manifest and uses
+`uv run --directory <source_repository_root> --frozen HasbaraTops`. The skills
+never hard-code or search for the checkout path and block when no declared
+route is executable.
+
 The model owns interpretation, ambiguous parentage judgment, reply drafting,
 fact-check judgment, and strategy analysis. Deterministic helpers own identifiers,
 duplicates, graphs, payload validation, lifecycle transitions, and persistence.

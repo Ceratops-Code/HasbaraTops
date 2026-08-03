@@ -1,0 +1,11 @@
+version: 1
+kind: ceratops-deploy
+operations:
+  deploy:
+    handoff: ceratops-skill-lifecycle/deploy
+  bootstrap:
+    steps:
+      - id: bootstrap-skills
+        run:
+          - python
+          - scripts/install-skills-bootstrap.py

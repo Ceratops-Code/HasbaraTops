@@ -12,9 +12,9 @@ description: Process supplied public content in an existing HasbaraTops case, re
 
 ## Workflow
 
-1. Treat an explicit Case ID as definitive; otherwise use root-based `case-find` only for candidate discovery and select the Case from branch context, asking when multiple candidates remain materially ambiguous. Load the selected Case once with `case-show`.
-2. Parse supplied URLs with `parse-url`, preserve each exact URL, and confirm that the selected Case contains the tracked branch. Never identify a Case from its latest reply.
-3. When sibling branches already stored in one Case must be tracked independently, prepare one `case-split-branch` command with an outside-Git backup and exact new title/topic. After explicit approval, run `HasbaraTops check`; if it passes, run the split and use its committed Case/Turn mapping.
+1. Treat an explicit Case ID as definitive; otherwise use root-based `HasbaraTops case-find` only for candidate discovery and select the Case from branch context, asking when multiple candidates remain materially ambiguous. Load the selected Case once with `HasbaraTops case-show`.
+2. Parse supplied URLs with `HasbaraTops parse-url`, preserve each exact URL, and confirm that the selected Case contains the tracked branch. Never identify a Case from its latest reply.
+3. When sibling branches already stored in one Case must be tracked independently, prepare one `HasbaraTops case-split-branch` command with an outside-Git backup and exact new title/topic. After explicit approval, run `HasbaraTops check`; if it passes, run that command and use its committed Case/Turn mapping.
 4. Assign or reuse only `P1`, `P2`, ... or `USER`. Resolve the direct parent from visible context or user confirmation and retain Parent Confidence; ask only when ambiguity changes the reply.
 5. Build one incoming Turn payload. A supplied `reply_comment_id` is its strongest duplicate identity; without one, the transaction uses Case ID + Parent Turn ID (including a null root) + Direction + Exact Text. The transaction returns the existing Turn on a duplicate or allocates a Turn ID, validates the complete parent graph, appends, commits, and reads back.
 6. Read repository strategy and evidence Markdown only as needed and verify material claims.
