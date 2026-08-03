@@ -88,7 +88,14 @@ A non-null `reply_comment_id` from a supplied permalink is globally unique acros
 
 Skills use read commands automatically. They may pass `--approved` only after the user approves the exact canonical write. No skill publishes to Facebook.
 
-Install the managed Codex skills after repository setup:
+Bootstrap the managed Codex skills on a first installation:
+
+```powershell
+python scripts/install-skills-bootstrap.py --repo-root .
+```
+
+After the Ceratops skill lifecycle is installed, validate and refresh the
+managed skills with:
 
 ```powershell
 python scripts/install-skills.py --repo-root .

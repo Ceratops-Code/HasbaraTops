@@ -18,3 +18,5 @@
 - Before a canonical write, require approval for the exact transaction, run
   `HasbaraTops check`, execute one high-level write, and require committed
   read-back.
+
+<!-- INTERNAL: include in every skill -->

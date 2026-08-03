@@ -1,0 +1,32 @@
+{
+  "runtime_source_id": "hasbaratops",
+  "validation_profile": "ceratops-compatible",
+  "sections": {
+    "core": "skills/sections/core.md",
+    "hasbaratops": "skills/sections/hasbaratops.md"
+  },
+  "maintenance_workflows": {},
+  "runtime_payloads": {},
+  "skills": {
+    "hasbaratops-closeout": [
+      "core",
+      "hasbaratops"
+    ],
+    "hasbaratops-followup": [
+      "core",
+      "hasbaratops"
+    ],
+    "hasbaratops-intake": [
+      "core",
+      "hasbaratops"
+    ],
+    "hasbaratops-posting": [
+      "core",
+      "hasbaratops"
+    ],
+    "hasbaratops-strategy-review": [
+      "core",
+      "hasbaratops"
+    ]
+  }
+}
