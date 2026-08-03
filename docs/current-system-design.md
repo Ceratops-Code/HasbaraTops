@@ -431,7 +431,7 @@ Installed skills resolve the CLI command once before use. They prefer the
 `HasbaraTops` console command on `PATH`; otherwise an active source checkout
 uses `uv run --frozen HasbaraTops`, while an installed skill reads
 `source_repository_root` from its runtime manifest and uses
-`uv run --project <source_repository_root> --frozen HasbaraTops`. The skills
+`uv run --directory <source_repository_root> --frozen HasbaraTops`. The skills
 never hard-code or search for the checkout path and block when no declared
 route is executable.
 

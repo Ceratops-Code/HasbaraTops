@@ -13,7 +13,7 @@
   when it is available on `PATH`. Otherwise, from an active HasbaraTops source
   checkout use `uv run --frozen HasbaraTops`; from an installed skill read
   `source_repository_root` in its `.runtime-manifest.json` and use
-  `uv run --project <source_repository_root> --frozen HasbaraTops`. Do not
+  `uv run --directory <source_repository_root> --frozen HasbaraTops`. Do not
   hard-code or search for the source repository path. Treat every
   `HasbaraTops ...` command below as this resolved prefix and stop if no route
   is executable.
