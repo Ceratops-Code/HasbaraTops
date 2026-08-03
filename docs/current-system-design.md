@@ -427,6 +427,14 @@ first installation, while `scripts/install-skills.py` validates and refreshes
 skills through an installed lifecycle bundle. `deploy/deploy.yml` declares the
 bootstrap operation and the managed lifecycle deployment handoff.
 
+Installed skills resolve the CLI command once before use. They prefer the
+`HasbaraTops` console command on `PATH`; otherwise an active source checkout
+uses `uv run --frozen HasbaraTops`, while an installed skill reads
+`source_repository_root` from its runtime manifest and uses
+`uv run --project <source_repository_root> --frozen HasbaraTops`. The skills
+never hard-code or search for the checkout path and block when no declared
+route is executable.
+
 The model owns interpretation, ambiguous parentage judgment, reply drafting,
 fact-check judgment, and strategy analysis. Deterministic helpers own identifiers,
 duplicates, graphs, payload validation, lifecycle transitions, and persistence.
