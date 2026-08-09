@@ -12,7 +12,7 @@ description: Close a HasbaraTops case from observable evidence and record the re
 
 ## Workflow
 
-1. Load the complete Case and Turn graph once with `case-show`.
+1. Load the complete Case and Turn graph once with `HasbaraTops case-show`.
 2. Resolve any missing public Turn through `$hasbaratops-followup` before closure.
 3. Verify privacy and record observable chronology only. Never infer persuasion from silence, deletion, blocking, a reaction, or disappearance.
 4. Choose the closed status, Outcome Class, highest outcome score reached, concise Outcome Notes, What Worked, What Failed, and exactly one Next Test.
