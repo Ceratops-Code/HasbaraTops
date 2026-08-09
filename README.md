@@ -112,9 +112,8 @@ python scripts/install-skills.py --repo-root .
 
 ```powershell
 uv sync --extra dev --frozen
-uv run --no-sync python scripts/validate_repository.py `
-  --temp-root "$env:TEMP" `
-  --evidence-file "$env:TEMP\HasbaraTops-validation.json"
+uv run --no-sync python scripts/validate-repository.py `
+  --evidence-file "$env:TEMP\HasbaraTops-validation.log"
 ```
 
 The shared validator runs pytest, Ruff, mypy, database initialization, and the

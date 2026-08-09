@@ -457,9 +457,14 @@ to Facebook.
 
 ## 13. Repository validation
 
-`scripts/validate_repository.py` is the shared local-and-CI validation
-entrypoint. Environment creation remains a caller responsibility. After
-`uv sync --extra dev --frozen`, the runner executes, in fail-fast order:
+`scripts/validate-repository.py` is the repository-validation wrapper used
+locally and by `.github/workflows/validate.yml`. It creates an owned temporary
+workspace and invokes `scripts/validate_repository.py`, the HasbaraTops check
+runner. The wrapper writes failure evidence to a caller-selected path or,
+by default, `build/deploy-validation/repository-validation.log`; successful
+validation removes stale wrapper evidence. Environment creation remains a
+caller responsibility. After `uv sync --extra dev --frozen`, the check runner
+executes, in fail-fast order:
 
 1. pytest
 2. Ruff
@@ -479,8 +484,8 @@ runner removes only the exact caller-selected evidence file, if present, so an
 Successful validation emits only `OK` and leaves no evidence file. Failure emits
 one compact JSON object with the failed stage and caller-selected evidence path;
 that file contains the full captured command, exit status, stdout, and stderr
-for each attempted stage. CI emits that file in a failure-only step so the full
-diagnostics remain available in the job log.
+for each attempted stage. The `Validate` workflow uploads wrapper evidence as
+the failure-only `repository-validation-evidence` artifact.
 
 The former Drive-era `doctor` command checked Git-checkout presence, the
 governance bootstrap, Drive configuration, and a Drive schema signature. The
