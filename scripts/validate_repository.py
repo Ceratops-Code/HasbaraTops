@@ -158,10 +158,17 @@ def _stages(database: Path, workspace: Path) -> tuple[Stage, ...]:
 def _isolated_environment(workspace: Path, database: Path) -> dict[str, str]:
     environment = os.environ.copy()
     temporary = str(workspace)
+    source_root = str(_repository_root() / "src")
+    existing_pythonpath = environment.get("PYTHONPATH")
     environment.update(
         {
             "HASBARATOPS_DB": str(database),
             "MYPY_CACHE_DIR": str(workspace / "mypy-cache"),
+            "PYTHONPATH": (
+                os.pathsep.join((source_root, existing_pythonpath))
+                if existing_pythonpath
+                else source_root
+            ),
             "PYTHONPYCACHEPREFIX": str(workspace / "pycache"),
             "RUFF_CACHE_DIR": str(workspace / "ruff-cache"),
             "TEMP": temporary,
