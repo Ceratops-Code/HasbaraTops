@@ -462,8 +462,11 @@ locally and by `.github/workflows/validate.yml`. It creates an owned temporary
 workspace and invokes `scripts/validate_repository.py`, the HasbaraTops check
 runner. The wrapper writes failure evidence to a caller-selected path or,
 by default, `build/deploy-validation/repository-validation.log`; successful
-validation removes stale wrapper evidence. Environment creation remains a
-caller responsibility. After `uv sync --extra dev --frozen`, the check runner
+validation removes stale wrapper evidence. Python environment creation and
+dependency installation remain caller responsibilities. For every child
+process, the runner prepends the checkout's `src` directory to `PYTHONPATH`
+while preserving caller entries, so source-layout imports resolve without an
+editable installation. After `uv sync --extra dev --frozen`, the check runner
 executes, in fail-fast order:
 
 1. pytest

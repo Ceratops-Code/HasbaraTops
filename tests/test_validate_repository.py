@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,6 +27,7 @@ def test_validation_order_isolation_cleanup_and_compact_success(
     evidence_file.parent.mkdir()
     evidence_file.write_text('{"stale":true}\n', encoding="utf-8")
     monkeypatch.setenv("HASBARATOPS_DB", str(real_database))
+    monkeypatch.setenv("PYTHONPATH", "caller-pythonpath")
     calls: list[RunCall] = []
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
@@ -72,6 +74,12 @@ def test_validation_order_isolation_cleanup_and_compact_success(
         assert environment["TEMP"] == str(isolated_database.parent)
         assert environment["TMP"] == str(isolated_database.parent)
         assert environment["TMPDIR"] == str(isolated_database.parent)
+        assert environment["PYTHONPATH"] == os.pathsep.join(
+            (
+                str(Path(validate_repository.__file__).resolve().parents[1] / "src"),
+                "caller-pythonpath",
+            )
+        )
         if "--database" in command:
             database_arguments.append(Path(command[command.index("--database") + 1]))
     assert database_arguments == [
