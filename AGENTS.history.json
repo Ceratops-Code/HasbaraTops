@@ -55,6 +55,14 @@
       "decision": "Remove the invalid cross-scope relation to global OUT-03 while preserving the project reply-completeness requirement.",
       "reason": "Project rule relations may target only project-scope IDs; global concise-output policy already applies through instruction precedence.",
       "regression": "Preserve one complete, self-contained, ready-to-post reply and global concise-output behavior without duplicating global policy locally."
+    },
+    {
+      "rules": [
+        "HASBARATOPS-REPLY-01"
+      ],
+      "decision": "Retire the illegal cross-scope `limits: OUT-03` metadata from HASBARATOPS-REPLY-01 while preserving the earlier decision's reply-completeness and concision behavior through normal global-to-local inheritance.",
+      "reason": "Rule relations must remain within one scope, and global OUT-03 already governs concise output without a local relation.",
+      "regression": "Preserve one complete, self-contained, ready-to-post HasbaraTops reply and global concise-output behavior without a duplicated local concision rule."
     }
   ]
 }

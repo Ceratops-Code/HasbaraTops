@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HasbaraTops</title>
+    <link rel="stylesheet" href="sidepanel.css">
+  </head>
+  <body>
+    <main>
+      <header class="brand">
+        <img src="icons/icon-48.png" width="48" height="48" alt="">
+        <div>
+          <p class="eyebrow">Local side panel</p>
+          <h1>HasbaraTops</h1>
+        </div>
+      </header>
+
+      <section class="status" aria-live="polite" aria-labelledby="status-heading">
+        <h2 id="status-heading">Choose a capture role</h2>
+        <p id="status-message">
+          Select visible text, then capture it after opening this panel from the
+          toolbar.
+        </p>
+      </section>
+
+      <section aria-labelledby="capture-heading">
+        <h2 id="capture-heading">Capture current selection</h2>
+        <div class="capture-actions">
+          <button type="button" data-role="post_context">
+            Start new discussion from here (new case)
+          </button>
+          <button type="button" data-role="target_comment">
+            Respond to this comment
+          </button>
+          <button type="button" data-role="published_reply">
+            This is my reply - save it
+          </button>
+        </div>
+      </section>
+
+      <form id="capture-form" class="preview" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Unconfirmed capture</p>
+            <h2 id="preview-role">Selected context</h2>
+          </div>
+          <span class="badge">Review required</span>
+        </div>
+
+        <label for="exact-text">Exact selected text</label>
+        <textarea id="exact-text" rows="8" required></textarea>
+        <p class="field-help">
+          Edit only to correct the captured text. This exact value remains the
+          identity input.
+        </p>
+
+        <label for="candidate-select">Nearby permalink candidates</label>
+        <select id="candidate-select">
+          <option value="">No candidate selected</option>
+        </select>
+
+        <label for="selected-url">Confirmed URL</label>
+        <input
+          id="selected-url"
+          type="url"
+          inputmode="url"
+          autocomplete="off"
+          placeholder="Paste the exact permalink"
+          required
+        >
+
+        <label for="page-url">Source page URL</label>
+        <input id="page-url" type="text" readonly>
+
+        <button class="primary" type="submit">Confirm capture</button>
+      </form>
+
+      <section id="confirmed-capture" class="confirmed" hidden>
+        <p class="eyebrow">Confirmed locally</p>
+        <h2 id="confirmed-role">Selected context</h2>
+        <dl>
+          <div>
+            <dt>URL</dt>
+            <dd id="confirmed-url"></dd>
+          </div>
+          <div>
+            <dt>Exact text</dt>
+            <dd><pre id="confirmed-text"></pre></dd>
+          </div>
+        </dl>
+        <p class="field-help">
+          No Case lookup, chat, native message, or database action exists yet.
+        </p>
+      </section>
+    </main>
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

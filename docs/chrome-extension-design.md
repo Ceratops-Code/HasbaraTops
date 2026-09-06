@@ -108,9 +108,9 @@ not weaken a permission, guardrail, or approval boundary as a workaround.
 
 1. The user selects visible text on the current Facebook page.
 2. The user invokes one of these context-menu actions:
-   - `Use selection as post context`
-   - `Discuss selected comment`
-   - `Capture published reply`
+   - `Start new discussion from here (new case)`
+   - `Respond to this comment`
+   - `This is my reply - save it`
 3. Chrome grants temporary active-tab access for that gesture.
 4. The extension reads only the selection, current URL, and bounded permalink
    candidates near the selection.
@@ -147,7 +147,7 @@ The reliable path is explicit selection:
 
 1. The user manually publishes on Facebook.
 2. The user selects the actual published response.
-3. The user invokes `Capture published reply`.
+3. The user invokes `This is my reply - save it`.
 4. The extension captures the actual text and candidate permalink.
 
 An optional assisted path may be added later:
@@ -217,7 +217,11 @@ extension/
 Use plain packaged JavaScript modules for the first MVP. A framework or bundler
 is not justified until UI complexity demonstrates a need.
 
-Recommended manifest contract:
+Step 2 implements `manifest.json`, `service-worker.js`, `capture.js`,
+`sidepanel.html`, `sidepanel.js`, `sidepanel.css`, and packaged raster icons.
+Native-integration modules remain absent until their implementation stage.
+
+Target manifest contract after the capture and native-host stages:
 
 - `manifest_version`: `3`
 - `minimum_chrome_version`: `116`
@@ -228,7 +232,14 @@ Recommended manifest contract:
 - No remote code
 - No external network connection in extension CSP
 
-Responsibilities:
+The Step 2 extension requests only `activeTab`, `contextMenus`, `scripting`, and
+`sidePanel`. It registers the three selection context-menu actions, configures
+the toolbar action to open the side panel, and injects one isolated read-only
+capture function after a user gesture. It has no host permission, static content
+script, native messaging, outbound request, whole-page observation, or page
+mutation behavior.
+
+Target responsibilities:
 
 - The service worker registers context menus, opens the panel after a user
   gesture, and runs the capture function.
@@ -243,12 +254,12 @@ Responsibilities:
 ```json
 {
   "capture_id": "local-random-id",
-  "captured_at": "2026-07-24 12:00",
+  "captured_at": "2026-07-24T12:00:00.000Z",
   "role": "target_comment",
   "page_url": "exact current URL",
   "exact_text": "exact selected visible text",
   "candidate_urls": ["exact nearby permalink"],
-  "capture_source": "context_menu_selection",
+  "capture_source": "context_menu_selection | toolbar_selection",
   "confidence": "needs_user_confirmation",
   "warnings": []
 }
@@ -264,6 +275,10 @@ Rules:
 - Missing text or URL is visible, never guessed.
 - Names, profile URLs, avatar URLs, reactions, and account identifiers are not
   fields and must not be collected.
+- Nearby-link discovery stops at four non-page ancestors, visits at most 120
+  elements per level, returns at most eight unique HTTP or HTTPS URLs, and
+  accepts only structurally marked permalink anchors (`time`, `rel=bookmark`,
+  or a permalink data attribute). It never captures anchor text.
 
 ### 6.3 Side-panel state machine
 
@@ -284,6 +299,12 @@ idle
 Every transition may enter `blocked` or `error`. Reloading the page or losing the
 active-tab grant invalidates capture state. Changing any prepared-write field
 invalidates its approval digest.
+
+Step 2 implements `idle -> captured -> context_confirmed` only. Reloading,
+navigating, closing, or switching away from the source tab invalidates the
+unconfirmed or confirmed capture held by the panel. The live panel enforces this
+from tab lifecycle events so service-worker suspension cannot preserve stale
+capture state.
 
 ### 6.4 Native host
 
