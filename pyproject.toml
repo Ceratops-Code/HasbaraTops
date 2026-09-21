@@ -16,7 +16,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 urls = { Repository = "https://github.com/Ceratops-Code/HasbaraTops" }
-dependencies = ["tzdata==2026.3"]
+dependencies = ["tzdata==2026.4"]
 
 [project.optional-dependencies]
 dev = [
